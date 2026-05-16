@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vinted Manager — nathanmo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --bg2: #161616;
+  --bg3: #1e1e1e;
+  --bg4: #252525;
+  --border: #2a2a2a;
+  --border2: #333;
+  --text: #f0f0f0;
+  --text2: #888;
+  --text3: #555;
+  --accent: #00e5a0;
+  --accent2: #00b87a;
+  --accent-dim: rgba(0,229,160,0.08);
+  --accent-dim2: rgba(0,229,160,0.15);
+  --warn: #f5a623;
+  --warn-dim: rgba(245,166,35,0.1);
+  --err: #ff5f5f;
+  --err-dim: rgba(255,95,95,0.1);
+  --blue: #4d9eff;
+  --blue-dim: rgba(77,158,255,0.1);
+  --font: 'Syne', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --r: 8px;
+  --r2: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* LAYOUT */
+.app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.logo {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.logo-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+.nav { flex: 1; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+  border-left: 2px solid transparent;
+  letter-spacing: 0.02em;
+}
+.nav-item:hover { color: var(--text); background: var(--bg3); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+.nav-item .nav-icon { font-size: 15px; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: #000;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 99px;
+  font-family: var(--mono);
+}
+.nav-section {
+  padding: 16px 20px 6px;
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: var(--mono);
+}
+.sidebar-bottom {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+.sync-btn {
+  width: 100%;
+  padding: 9px 14px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent2);
+  border-radius: var(--r);
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.sync-btn:hover { background: var(--accent-dim2); }
+.last-sync { font-size: 10px; color: var(--text3); text-align: center; margin-top: 6px; font-family: var(--mono); }
+
+/* MAIN */
+.main { overflow-y: auto; }
+.page { display: none; padding: 32px; }
+.page.active { display: block; }
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 28px; }
+.page-title { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.page-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+/* STATS ROW */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 16px;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border2); }
+.stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); margin-bottom: 6px; }
+.stat-val { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
+.stat-val.accent { color: var(--accent); }
+.stat-val.warn { color: var(--warn); }
+
+/* TOOLBAR */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-wrap {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+.search-wrap input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 8px 12px 8px 34px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s;
+}
+.search-wrap input:focus { border-color: var(--accent2); }
+.search-wrap .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  font-size: 14px;
+}
+select, input[type="text"], input[type="number"], textarea {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s;
+}
+select:focus, input:focus, textarea:focus { border-color: var(--accent2); }
+select { cursor: pointer; }
+textarea { resize: vertical; width: 100%; }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--r);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--text2); color: var(--text); }
+.btn:active { transform: scale(.97); }
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-weight: 700;
+}
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); color: #000; }
+.btn-ghost { border-color: transparent; }
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+.btn-warn { border-color: var(--warn); color: var(--warn); background: var(--warn-dim); }
+.btn-warn:hover { background: rgba(245,166,35,0.2); }
+.btn-err { border-color: var(--err); color: var(--err); background: var(--err-dim); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 7px; border-radius: var(--r); }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r2); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--mono);
+  background: var(--bg2);
+  white-space: nowrap;
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--bg2); }
+.chk { width: 14px; height: 14px; cursor: pointer; accent-color: var(--accent); }
+
+/* BADGES */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.b-ok { background: rgba(0,229,160,0.12); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+.b-warn { background: var(--warn-dim); color: var(--warn); border: 1px solid rgba(245,166,35,0.2); }
+.b-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(77,158,255,0.2); }
+.b-err { background: var(--err-dim); color: var(--err); border: 1px solid rgba(255,95,95,0.2); }
+.b-dim { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+.b-new { background: rgba(77,158,255,0.12); color: var(--blue); border: 1px solid rgba(77,158,255,0.25); animation: pulse-blue 2s infinite; }
+@keyframes pulse-blue { 0%,100%{opacity:1} 50%{opacity:.7} }
+
+/* ITEM DETAIL PANEL */
+.detail-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+.detail-overlay.open { display: flex; align-items: center; justify-content: center; padding: 24px; }
+.detail-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px;
+  position: relative;
+}
+.detail-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 16px;
+  transition: all .15s;
+}
+.detail-close:hover { border-color: var(--border2); color: var(--text); }
+.detail-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.02em; }
+.detail-url { font-size: 12px; color: var(--text3); font-family: var(--mono); margin-bottom: 20px; }
+.detail-url a { color: var(--accent); text-decoration: none; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.detail-field label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); display: block; margin-bottom: 4px; }
+.detail-field .val { font-size: 13px; color: var(--text); background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 6px 10px; }
+.detail-photos { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.detail-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--r);
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+.detail-photo-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--r);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--text3);
+}
+
+/* PROGRESS */
+.progress-bar {
+  height: 3px;
+  background: var(--bg3);
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  border-radius: 99px;
+  transition: width .4s;
+}
+.log-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  line-height: 1.7;
+}
+.log-line { padding: 1px 0; }
+.log-info { color: var(--text3); }
+.log-ok { color: var(--accent); }
+.log-err { color: var(--err); }
+.log-step { color: var(--blue); }
+
+/* SETTINGS */
+.settings-section { margin-bottom: 28px; }
+.settings-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 20px; }
+.settings-row:last-child { border-bottom: none; }
+.settings-info { flex: 1; }
+.settings-info strong { font-size: 14px; font-weight: 500; display: block; margin-bottom: 3px; }
+.settings-info span { font-size: 12px; color: var(--text3); }
+.api-key-input { width: 320px; font-family: var(--mono); font-size: 12px; }
+
+/* ALERT */
+.alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-radius: var(--r);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.alert-info { background: var(--blue-dim); border: 1px solid rgba(77,158,255,0.2); color: var(--blue); }
+.alert-warn { background: var(--warn-dim); border: 1px solid rgba(245,166,35,0.2); color: var(--warn); }
+.alert-ok { background: var(--accent-dim); border: 1px solid rgba(0,229,160,0.2); color: var(--accent); }
+.alert-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+/* CATEGORY PILL */
+.cat-pill {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+/* PHOTO THUMB */
+.thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  vertical-align: middle;
+}
+.thumb-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text3);
+  vertical-align: middle;
+}
+
+/* EMPTY */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+}
+.empty-icon { font-size: 40px; display: block; margin-bottom: 12px; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; }
+
+/* GUIDE STEPS */
+.guide-step {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+}
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.step-body h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.step-body p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.step-body code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 12px; color: var(--accent); }
+
+/* REPUBLISH PANEL */
+.republish-info {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.republish-count { font-size: 20px; font-weight: 700; }
+.republish-count span { font-size: 13px; font-weight: 400; color: var(--text3); margin-left: 6px; }
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .ai-compare { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.page.active { animation: fadeIn .2s ease; }
+
+/* SPINNER */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* API KEY NOTICE */
+#api-notice {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--warn);
+  border-radius: var(--r2);
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--warn);
+  z-index: 200;
+  max-width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  display: none;
+}
+#api-notice strong { display: block; margin-bottom: 4px; font-size: 14px; }
+#api-notice a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-title">Vinted Manager</div>
+      <div class="logo-sub">nathanmo · ID 13818801</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Navigation</div>
+      <div class="nav-item active" onclick="showPage('listings')">
+        <span class="nav-icon">◈</span> Mes annonces
+        <span class="nav-badge" id="nav-count">0</span>
+      </div>
+      <div class="nav-item" onclick="showPage('republish')">
+        <span class="nav-icon">↺</span> Republier
+      </div>
+
+      <div class="nav-section">Outils</div>
+      <div class="nav-item" onclick="showPage('guide')">
+        <span class="nav-icon">◎</span> Guide
+      </div>
+      <div class="nav-item" onclick="showPage('settings')">
+        <span class="nav-icon">⊙</span> Paramètres
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="sync-btn" onclick="triggerSync()">
+        ↻ Synchroniser Vinted
+      </button>
+      <div class="last-sync" id="last-sync-label">Jamais synchronisé</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- PAGE: LISTINGS -->
+    <div id="page-listings" class="page active">
+      <div class="page-header">
+        <div class="page-title">Mes annonces</div>
+        <div class="page-sub">Base de données complète — <span id="total-count">0</span> articles</div>
+      </div>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">Total</div>
+          <div class="stat-val accent" id="s-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Sélectionnés</div>
+          <div class="stat-val" id="s-sel">0</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Valeur sél.</div>
+          <div class="stat-val" id="s-val">0 €</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="q" placeholder="Titre, marque, description…" oninput="renderTable()">
+        </div>
+        <select id="f-cat" onchange="renderTable()">
+          <option value="">Toutes catégories</option>
+          <option value="Women">Femmes</option>
+          <option value="Men">Hommes</option>
+          <option value="Kids">Enfants</option>
+          <option value="Home">Maison</option>
+          <option value="Electronics">Électronique</option>
+          <option value="Entertainment">Divertissement</option>
+          <option value="Sports">Sports</option>
+        </select>
+        <select id="f-etat" onchange="renderTable()">
+          <option value="">Tous états</option>
+          <option>New with tags</option>
+          <option>New without tags</option>
+          <option>Very good</option>
+          <option>Good</option>
+          <option>Satisfactory</option>
+        </select>
+        <button class="btn btn-sm" onclick="selAll()">✓ Tout sél.</button>
+        <button class="btn btn-sm btn-ghost" onclick="selNone()">✕ Décocher</button>
+        <button class="btn btn-primary btn-sm" onclick="showPage('republish')">↺ Republier</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" class="chk" id="chk-all" onchange="toggleAll(this)"></th>
+              <th>Photo</th>
+              <th>Titre</th>
+              <th>Catégorie</th>
+              <th>Marque</th>
+              <th>Taille</th>
+              <th>Prix</th>
+              <th>État</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="listings-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGE: REPUBLISH -->
+    <div id="page-republish" class="page">
+      <div class="page-header">
+        <div class="page-title">Republier</div>
+        <div class="page-sub">Supprime et recrée les annonces sélectionnées pour les rebooster</div>
+      </div>
+      <div class="republish-info">
+        <div>
+          <div class="republish-count"><span id="sel-count">0</span><span>annonces sélectionnées</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">Va dans "Mes annonces" pour modifier la sélection</div>
+        </div>
+        <button class="btn btn-primary" onclick="launchRepublish()" id="btn-launch">
+          ↺ Lancer la republication
+        </button>
+      </div>
+      <div id="republish-progress" style="display:none">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">
+          <span id="prog-label">0 / 0</span>
+          <span id="prog-pct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+      </div>
+      <div class="log-box" id="log-box">
+        <div class="log-line log-info">En attente de lancement…</div>
+      </div>
+      <div class="alert alert-warn" style="margin-top:16px">
+        <span class="alert-icon">⚠</span>
+        <div>
+          <strong>Anti-blocage Vinted :</strong> Le script intègre des délais automatiques. 
+          Max <strong id="warn-batch">20</strong> annonces/session · <strong id="warn-delay">30s</strong> entre chaque · pause toutes les 10.
+          Paramètre dans <a href="#" onclick="showPage('settings')" style="color:var(--warn)">Paramètres</a>.
+          <br>Photos récupérées <strong>automatiquement</strong> depuis les annonces avant suppression.
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: GUIDE -->
+    <div id="page-guide" class="page">
+      <div class="page-header">
+        <div class="page-title">Guide d'utilisation</div>
+        <div class="page-sub">Comment utiliser Vinted Manager</div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Hébergement GitHub Pages</h3>
+          <p>Pour accéder à cet outil depuis n'importe où :<br>
+          1. Crée un compte sur <a href="https://github.com" target="_blank" style="color:var(--accent)">github.com</a><br>
+          2. Crée un nouveau repository public nommé <code>vinted-manager</code><br>
+          3. Upload ce fichier <code>index.html</code><br>
+          4. Va dans Settings → Pages → Source: main branch<br>
+          5. Ton site sera disponible sur <code>https://[ton-pseudo].github.io/vinted-manager</code></p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Clé API Anthropic (pour l'optimisation IA)</h3>
+          <p>Va dans <strong>Paramètres</strong>, entre ta clé API depuis <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>. La clé est stockée localement dans ton navigateur, jamais envoyée ailleurs.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Synchronisation Vinted</h3>
+          <p>Clique "Synchroniser Vinted" en bas du menu. Claude in Chrome (extension) navigue sur ton profil, récupère toutes tes annonces actives et met à jour la base. Les nouvelles annonces sont optimisées automatiquement.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Photos — récupération automatique</h3>
+          <p>Aucun dossier nécessaire. Le script de republication demande à Claude in Chrome de <strong>récupérer les photos directement depuis chaque annonce Vinted</strong> avant de la supprimer, puis de les réuploader sur la nouvelle annonce. Tout est automatique.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h3>Republication — anti-blocage intégré</h3>
+          <p>Sélectionne les annonces, clique "Republier sél." → "Lancer". Le script intègre des <strong>délais automatiques</strong> entre chaque annonce (30s par défaut) et des <strong>pauses</strong> toutes les 10 annonces pour éviter toute détection par Vinted. Configure ces délais dans Paramètres.<br><br>
+          <strong>Recommandé :</strong> max 20 annonces par session, pas plus d'une session par jour.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: SETTINGS -->
+    <div id="page-settings" class="page">
+      <div class="page-header">
+        <div class="page-title">Paramètres</div>
+        <div class="page-sub">Configuration de l'outil</div>
+      </div>
+      
+      <div class="settings-section">
+        <div class="settings-title">Base de données</div>
+        <div class="settings-row">
+          <div class="settings-info">
+            <strong>Annonces stockées</strong>
+            <span>Sauvegardées dans le localStorage de ton navigateur</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm" onclick="exportData()">↓ Exporter JSON</button>
+            <button class="btn btn-sm" onclick="document.getElementById('import-file').click()">↑ Importer JSON</button>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-info">
+            <strong>Forcer la mise à jour de la base</strong>
+            <span>Recharge les 91 annonces depuis le code (conserve tes optimisations IA et articles vendus)</span>
+          </div>
+          <button class="btn btn-warn btn-sm" onclick="forceRefreshDB()">↺ Mettre à jour</button>
+        </div>
+        <div class="settings-row">
+          <div class="settings-info">
+            <strong>Réinitialiser complètement</strong>
+            <span>Supprimer toutes les données locales (optimisations IA et vendus compris)</span>
+          </div>
+          <button class="btn btn-err btn-sm" onclick="resetData()">⚠ Réinitialiser</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Profil Vinted</div>
+        <div class="settings-row">
+          <div class="settings-info">
+            <strong>ID utilisateur</strong>
+            <span>Identifiant Vinted pour la synchronisation</span>
+          </div>
+          <input type="text" id="user-id-input" value="13818801" style="width:150px;font-family:var(--mono)" oninput="saveSettings()">
+        </div>
+        <div class="settings-row">
+          <div class="settings-info">
+            <strong>Source des photos</strong>
+            <span>Claude récupère les photos directement depuis chaque annonce Vinted avant de la supprimer — aucun dossier nécessaire.</span>
+          </div>
+          <span class="badge b-ok" style="padding:6px 12px;font-size:12px">✓ Automatique</span>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">Anti-blocage Vinted</div>
+      <div class="settings-row">
+        <div class="settings-info">
+          <strong>Annonces par session</strong>
+          <span>Maximum recommandé pour éviter tout blocage. Au-delà, découpe en plusieurs sessions.</span>
+        </div>
+        <select id="batch-size-input" onchange="saveSettings()" style="width:120px">
+          <option value="10">10 max</option>
+          <option value="15">15 max</option>
+          <option value="20" selected>20 max ✓</option>
+          <option value="30">30 max</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <div class="settings-info">
+          <strong>Délai entre annonces</strong>
+          <span>Temps d'attente entre chaque republication. Plus c'est long, moins c'est détectable.</span>
+        </div>
+        <select id="delay-input" onchange="saveSettings()" style="width:160px">
+          <option value="15">15s (risqué)</option>
+          <option value="30" selected>30s (recommandé) ✓</option>
+          <option value="60">60s (sécurisé)</option>
+          <option value="120">2min (très sécurisé)</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <div class="settings-info">
+          <strong>Pause toutes les 10 annonces</strong>
+          <span>Pause automatique pour simuler un comportement humain.</span>
+        </div>
+        <select id="pause-input" onchange="saveSettings()" style="width:160px">
+          <option value="0">Désactivé</option>
+          <option value="120" selected>2 min ✓</option>
+          <option value="300">5 min</option>
+        </select>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detail-panel">
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATABASE — 91 annonces nathanmo
+// ============================================================
+const INITIAL_DB = [{"id":"5749948683","titre":"Jean G-STAR","description":"Jean en toile enduite G-STAR avec 2 poches arrières et 2 poches latérales, taille basse","prix":"10","marque":"G-Star","taille":"M / 38 / 10","etat":"Very good","couleur":"Navy","categorie":"Women > Clothing > Jeans > Straight jeans","nb_photos":3,"url":"https://www.vinted.fr/items/5749948683-jean-g-star"},{"id":"5732553074","titre":"Jupe IKKS","description":"Jupe noire en toile huilée IKKS avec lanières à la taille, 2 poches latérales et 2 poches arrière \nPortée une fois","prix":"15","marque":"IKKS","taille":"M / 38 / 10","etat":"Very good","couleur":"Black","categorie":"Women > Clothing > Skirts > Knee-length skirts","nb_photos":3,"url":"https://www.vinted.fr/items/5732553074-jupe-ikks"},{"id":"5732462739","titre":"Pantalon en toile One Step","description":"Pantalon en toile noire One Step avec deux poches sur les cuisses","prix":"10","marque":"One step","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Trousers","nb_photos":3,"url":"https://www.vinted.fr/items/5732462739-pantalon-en-toile-one-step"},{"id":"5732455239","titre":"Pantalon One Step","description":"Pantalon noir One step à rayures beiges avec deux poches sur les cuisses","prix":"10","marque":"One step","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Trousers","nb_photos":3,"url":"https://www.vinted.fr/items/5732455239-pantalon-one-step"},{"id":"5732435344","titre":"Jupe Mexx","description":"Jupe noire Mexx légèrement évasée avec deux poches latérales et un ourlet festonné","prix":"10","marque":"Mexx","taille":"S / 36 / 8","etat":"Very good","couleur":"Black","categorie":"Women > Clothing > Skirts","nb_photos":3,"url":"https://www.vinted.fr/items/5732435344-jupe-mexx"},{"id":"5732408196","titre":"Chemise Oxford bleue","description":"Chemise Oxford bleue","prix":"12","marque":"Other","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5732408196"},{"id":"5732343121","titre":"Chemise blanche Oxford","description":"Chemise blanche Oxford","prix":"10","marque":"Other","taille":"M","etat":"Good","couleur":"White","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5732343121"},{"id":"5732326066","titre":"Polo bleu marine","description":"Polo bleu marine","prix":"12","marque":"Other","taille":"L","etat":"Good","couleur":"Navy","categorie":"Men > Clothing > Tops & T-shirts > Polo shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5732326066"},{"id":"5731767592","titre":"Chemise à carreaux multicolore","description":"Chemise à carreaux multicolore","prix":"8","marque":"Other","taille":"M","etat":"Good","couleur":"Multicolour","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5731767592"},{"id":"5731732018","titre":"Chemise à carreaux verte","description":"Chemise à carreaux verte","prix":"8","marque":"Other","taille":"M","etat":"Good","couleur":"Green","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5731732018"},{"id":"5731712548","titre":"Echarpe en laine","description":"Echarpe en laine grise","prix":"10","marque":"Other","taille":"One Size","etat":"Good","couleur":"Grey","categorie":"Men > Accessories > Scarves","nb_photos":2,"url":"https://www.vinted.fr/items/5731712548"},{"id":"5731633353","titre":"Ceinture en cuir","description":"Ceinture en cuir marron","prix":"8","marque":"Other","taille":"M","etat":"Good","couleur":"Brown","categorie":"Men > Accessories > Belts","nb_photos":2,"url":"https://www.vinted.fr/items/5731633353"},{"id":"5713748014","titre":"Jeu top ten","description":"Jeu de société top ten en très bon état","prix":"6","marque":"cocktail games","taille":"One Size","etat":"Good","couleur":"","categorie":"Entertainment > Games > Board games","nb_photos":3,"url":"https://www.vinted.fr/items/5713748014"},{"id":"5713689929","titre":"Casque de vélo","description":"Casque de vélo Decathlon","prix":"20","marque":"Decathlon","taille":"L","etat":"New without tags","couleur":"Black","categorie":"Sports > Cycling","nb_photos":3,"url":"https://www.vinted.fr/items/5713689929"},{"id":"5713673868","titre":"Manteau long gris","description":"Manteau long gris","prix":"25","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Grey","categorie":"Women > Clothing > Coats & Jackets > Coats","nb_photos":2,"url":"https://www.vinted.fr/items/5713673868"},{"id":"5713649019","titre":"Gilet sans manche Comptoir des Cotonniers","description":"Gilet sans manche Comptoir des Cotonniers","prix":"15","marque":"Comptoir des Cotonniers","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Tops & T-shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5713649019"},{"id":"5713433692","titre":"Blazer gris","description":"Blazer gris","prix":"15","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Grey","categorie":"Women > Clothing > Suits & Blazers > Blazers","nb_photos":2,"url":"https://www.vinted.fr/items/5713433692"},{"id":"5713379374","titre":"Veste en laine Kookaï","description":"Veste en laine Kookaï","prix":"15","marque":"Kookaï","taille":"M / 38 / 10","etat":"Good","couleur":"Brown","categorie":"Women > Clothing > Coats & Jackets > Jackets","nb_photos":2,"url":"https://www.vinted.fr/items/5713379374"},{"id":"5713364644","titre":"Robe violette","description":"Robe violette","prix":"10","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Purple","categorie":"Women > Clothing > Dresses","nb_photos":2,"url":"https://www.vinted.fr/items/5713364644"},{"id":"5713351117","titre":"Chemise rayée Napapijri","description":"Chemise rayée Napapijri","prix":"10","marque":"Napapijri","taille":"L","etat":"Very good","couleur":"","categorie":"Men > Clothing > Shirts","nb_photos":3,"url":"https://www.vinted.fr/items/5713351117"},{"id":"5713231332","titre":"Chemise Stade Toulousain","description":"Chemise officielle Stade Toulousain rouge et noir","prix":"10","marque":"Stade Toulousain","taille":"M","etat":"Very good","couleur":"Red","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5713231332"},{"id":"5713207628","titre":"Chemise à carreaux Levi's","description":"Chemise à carreaux Levi's","prix":"8","marque":"Levi's","taille":"14 years / 164 cm","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5713207628"},{"id":"5713159613","titre":"Chemise blanche Lenny & Loyd","description":"Chemise blanche Lenny & Loyd","prix":"8","marque":"Lenny & Loyd","taille":"S","etat":"Good","couleur":"White","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5713159613"},{"id":"5713123568","titre":"Chemise noire Serge Blanco","description":"Chemise noire Serge Blanco","prix":"10","marque":"Serge Blanco","taille":"M","etat":"Very good","couleur":"Black","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5713123568"},{"id":"5713103525","titre":"Chemise blanche Diester","description":"Chemise blanche Diester","prix":"8","marque":"Diester","taille":"L","etat":"Good","couleur":"White","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5713103525"},{"id":"5713084942","titre":"Chemise noire Jack & Jones","description":"Chemise noire Jack & Jones","prix":"8","marque":"Jack & Jones","taille":"L","etat":"Good","couleur":"Black","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5713084942"},{"id":"5712987540","titre":"Chemise à rayures Mexx","description":"Chemise à rayures Mexx","prix":"8","marque":"Mexx","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5712987540"},{"id":"5712876956","titre":"Chemise à carreaux Kaporal","description":"Chemise à carreaux Kaporal","prix":"8","marque":"Kaporal","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5712876956"},{"id":"5712847519","titre":"Chemise à carreaux Devred","description":"Chemise à carreaux Devred","prix":"8","marque":"Devred","taille":"L","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5712847519"},{"id":"5712823270","titre":"Veste légère Quechua XL","description":"Veste légère Quechua","prix":"15","marque":"Quechua","taille":"XL","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Coats & Jackets > Jackets","nb_photos":2,"url":"https://www.vinted.fr/items/5712823270"},{"id":"5712760969","titre":"Veste légère Quechua L","description":"Veste légère Quechua","prix":"15","marque":"Quechua","taille":"L","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Coats & Jackets > Jackets","nb_photos":2,"url":"https://www.vinted.fr/items/5712760969"},{"id":"5712661427","titre":"Chemise à carreaux Petrol Industries","description":"Chemise à carreaux Petrol Industries bleu et gris, 2 poches poitrines","prix":"10","marque":"Petrol Industries","taille":"L","etat":"Very good","couleur":"Grey, Blue","categorie":"Men > Clothing > Tops & T-shirts > Shirts > Checked shirts","nb_photos":3,"url":"https://www.vinted.fr/items/5712661427"},{"id":"5712632450","titre":"Chemise à carreaux Kaporal","description":"Chemise à carreaux Kaporal avec imprimé dans le dos et boutons style bois","prix":"10","marque":"Kaporal","taille":"S","etat":"Very good","couleur":"Red, Blue","categorie":"Men > Clothing > Tops & T-shirts > Shirts > Checked shirts","nb_photos":3,"url":"https://www.vinted.fr/items/5712632450"},{"id":"5712607645","titre":"Chemise à carreaux H&M","description":"Chemise à carreaux H&M verte et rouge avec poche poitrine","prix":"10","marque":"H&M","taille":"S","etat":"Very good","couleur":"Red","categorie":"Men > Clothing > Tops & T-shirts > Shirts > Checked shirts","nb_photos":3,"url":"https://www.vinted.fr/items/5712607645"},{"id":"5712483338","titre":"Veste en cuir T&K Maxx","description":"Veste en cuir bleue avec 2 poches poitrines et 2 poches latérales zippées, surpiqûres aux épaules et aux coudes, 2 poches intérieures, col droit avec pattes de boutonnage","prix":"45","marque":"TK Denim","taille":"M","etat":"Very good","couleur":"Blue","categorie":"Men > Clothing > Coats & Jackets > Jackets > Biker & racer jackets","nb_photos":6,"url":"https://www.vinted.fr/items/5712483338"},{"id":"5712195246","titre":"Chemise à carreaux Cache Cache","description":"Chemise à carreaux Cache Cache","prix":"8","marque":"Cache Cache","taille":"36","etat":"Good","couleur":"Blue","categorie":"Women > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5712195246"},{"id":"5712178725","titre":"Pull à col roulé noir Mexx","description":"Pull à col roulé noir Mexx","prix":"10","marque":"Mexx","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Jumpers & Cardigans > Jumpers","nb_photos":2,"url":"https://www.vinted.fr/items/5712178725"},{"id":"5712134503","titre":"Gilet gris à col rond Mexx","description":"Gilet gris à col rond Mexx","prix":"8","marque":"Mexx","taille":"M / 38 / 10","etat":"Good","couleur":"Grey","categorie":"Women > Clothing > Jumpers & Cardigans > Cardigans","nb_photos":2,"url":"https://www.vinted.fr/items/5712134503"},{"id":"5712091362","titre":"Manteau drap de laine","description":"Manteau en drap de laine","prix":"25","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Beige","categorie":"Women > Clothing > Coats & Jackets > Coats","nb_photos":3,"url":"https://www.vinted.fr/items/5712091362"},{"id":"5712070625","titre":"Robe noire H&M","description":"Robe noire H&M","prix":"10","marque":"H&M","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Dresses","nb_photos":2,"url":"https://www.vinted.fr/items/5712070625"},{"id":"5712061461","titre":"Robe violette Lindosky","description":"Robe violette Lindosky","prix":"10","marque":"lindosky","taille":"M / 38 / 10","etat":"Good","couleur":"Purple","categorie":"Women > Clothing > Dresses","nb_photos":2,"url":"https://www.vinted.fr/items/5712061461"},{"id":"5712045296","titre":"Gilet noir Tanaïs","description":"Gilet noir Tanaïs","prix":"10","marque":"Tanaïs","taille":"M / 38 / 10","etat":"Very good","couleur":"Black","categorie":"Women > Clothing > Jumpers & Cardigans > Cardigans","nb_photos":2,"url":"https://www.vinted.fr/items/5712045296"},{"id":"5712036520","titre":"Chemise rouge Ntamack","description":"Chemise rouge Ntamack","prix":"10","marque":"NTAMACK","taille":"M","etat":"Good","couleur":"Red","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5712036520"},{"id":"5712028308","titre":"Chemise à carreaux Old River","description":"Chemise à carreaux Old River","prix":"8","marque":"Old River","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5712028308"},{"id":"5712019856","titre":"Chemise à rayures Olly Gan","description":"Chemise à rayures Olly Gan","prix":"10","marque":"Olly Gan","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5712019856"},{"id":"5711962882","titre":"Chemise à carreaux Serge Blanco","description":"Chemise à carreaux Serge Blanco","prix":"10","marque":"Serge Blanco","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5711962882"},{"id":"5711957403","titre":"Chemise à carreaux Lacoste","description":"Chemise à carreaux Lacoste","prix":"12","marque":"Lacoste","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5711957403"},{"id":"5711950959","titre":"Chemise bleue Lacoste","description":"Chemise bleue Lacoste","prix":"12","marque":"Lacoste","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5711950959"},{"id":"5711942016","titre":"Chemise bleue Brice","description":"Chemise bleue Brice","prix":"8","marque":"Brice","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5711942016"},{"id":"5711932688","titre":"Chemise à carreaux Polo Club","description":"Chemise à carreaux Polo Club","prix":"8","marque":"Polo Club","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5711932688"},{"id":"5711927125","titre":"Chemise Andrew Mac Allister","description":"Chemise à carreaux Andrew Mac Allister","prix":"8","marque":"Andrew Mac Allister","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5711927125"},{"id":"5711921640","titre":"Chemise bleue Thomas Pink","description":"Chemise bleue Thomas Pink","prix":"12","marque":"Thomas Pink","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5711921640"},{"id":"5708142437","titre":"Chemise rayée Kiabi","description":"Chemise rayée Kiabi","prix":"5","marque":"Kiabi","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5708142437"},{"id":"5707586491","titre":"Chemise bleue à carreaux Jack & Jones","description":"Chemise bleue à carreaux Jack & Jones","prix":"8","marque":"Jack & Jones","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5707586491"},{"id":"5707574214","titre":"Chemise bleue C&A","description":"Chemise bleue C&A","prix":"5","marque":"C&A","taille":"M","etat":"Good","couleur":"Blue","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5707574214"},{"id":"5707552908","titre":"Chemise verte en lin Banana Republic","description":"Chemise verte en lin Banana Republic","prix":"10","marque":"Banana Republic","taille":"M","etat":"Good","couleur":"Green","categorie":"Men > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5707552908"},{"id":"5707533856","titre":"Chemise blanche Caroll","description":"Chemise blanche Caroll","prix":"5","marque":"Caroll","taille":"M / 38 / 10","etat":"Good","couleur":"White","categorie":"Women > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5707533856"},{"id":"5707520131","titre":"Chemise rayée bleue","description":"Chemise rayée bleue","prix":"5","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Blue","categorie":"Women > Clothing > Shirts","nb_photos":2,"url":"https://www.vinted.fr/items/5707520131"},{"id":"5707385827","titre":"Manteau léger","description":"Manteau léger","prix":"15","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Beige","categorie":"Women > Clothing > Coats & Jackets > Coats","nb_photos":2,"url":"https://www.vinted.fr/items/5707385827"},{"id":"5707369033","titre":"Jupe en toile huilée","description":"Jupe en toile huilée","prix":"10","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Skirts","nb_photos":2,"url":"https://www.vinted.fr/items/5707369033"},{"id":"5707348148","titre":"Robe noire","description":"Robe noire","prix":"10","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707348148"},{"id":"5707332258","titre":"Robe portefeuille","description":"Robe portefeuille violette et bleu à fleurs Miss Captain","prix":"10","marque":"Miss Captain","taille":"M / 38 / 10","etat":"Good","couleur":"Lilac","categorie":"Women > Clothing > Dresses > Summer dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707332258"},{"id":"5707317838","titre":"Chemise Teddy Smith","description":"Chemise Teddy Smith blanche avec rayures bleues très claires et fines","prix":"10","marque":"Teddy Smith","taille":"M","etat":"Very good","couleur":"White","categorie":"Men > Clothing > Shirts","nb_photos":3,"url":"https://www.vinted.fr/items/5707317838"},{"id":"5707294485","titre":"Tailleur kaki One Step","description":"Tailleur One Step en fausse fourrure verte","prix":"15","marque":"One step","taille":"M / 38 / 10","etat":"Very good","couleur":"Khaki","categorie":"Women > Clothing > Suits & Blazers > Skirt suits","nb_photos":3,"url":"https://www.vinted.fr/items/5707294485"},{"id":"5707222608","titre":"Robe grise Only","description":"Robe grise Only","prix":"6","marque":"ONLY","taille":"M / 38 / 10","etat":"Good","couleur":"Grey","categorie":"Women > Clothing > Dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707222608"},{"id":"5707207504","titre":"Chemise Levi's Marine","description":"Chemise Levi's bleu marine","prix":"10","marque":"Levi's","taille":"M / 38 / 10","etat":"Good","couleur":"Navy","categorie":"Women > Clothing > Shirts","nb_photos":3,"url":"https://www.vinted.fr/items/5707207504"},{"id":"5707168758","titre":"Robe brodée Monsoon","description":"Robe brodée Monsoon en coton blanc avec broderies colorées","prix":"15","marque":"Monsoon","taille":"M / 38 / 10","etat":"Very good","couleur":"White","categorie":"Women > Clothing > Dresses > Summer dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707168758"},{"id":"5707144860","titre":"Robe blanche Mango","description":"Robe blanche Mango","prix":"10","marque":"Mango","taille":"M / 38 / 10","etat":"Good","couleur":"White","categorie":"Women > Clothing > Dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707144860"},{"id":"5707130148","titre":"Robe Cache Cache","description":"Robe Cache Cache bleu marine à pois blancs","prix":"10","marque":"Cache Cache","taille":"M / 38 / 10","etat":"Good","couleur":"Navy","categorie":"Women > Clothing > Dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707130148"},{"id":"5707120120","titre":"Robe BCBG Max Azria","description":"Robe BCBG Max Azria","prix":"20","marque":"BCBG Max Azria","taille":"M / 38 / 10","etat":"Very good","couleur":"Black","categorie":"Women > Clothing > Dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707120120"},{"id":"5707105800","titre":"Robe longue","description":"Robe longue fluide","prix":"10","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Dresses > Maxi dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707105800"},{"id":"5707092750","titre":"Robe Promod","description":"Robe Promod","prix":"8","marque":"Promod","taille":"M / 38 / 10","etat":"Good","couleur":"Blue","categorie":"Women > Clothing > Dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707092750"},{"id":"5707047883","titre":"Robe Vero Moda","description":"Robe Vero Moda","prix":"8","marque":"Vero Moda","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Dresses","nb_photos":3,"url":"https://www.vinted.fr/items/5707047883"},{"id":"5707020281","titre":"Jupe longue Sinequanone","description":"Jupe longue Sinequanone","prix":"12","marque":"Sinequanone","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Skirts > Maxi skirts","nb_photos":3,"url":"https://www.vinted.fr/items/5707020281"},{"id":"5707005709","titre":"Jean slim noir","description":"Jean slim noir","prix":"10","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Jeans > Skinny jeans","nb_photos":3,"url":"https://www.vinted.fr/items/5707005709"},{"id":"5706995602","titre":"Pantalon large Zara","description":"Pantalon large Zara","prix":"12","marque":"Zara","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Trousers","nb_photos":3,"url":"https://www.vinted.fr/items/5706995602"},{"id":"5706980548","titre":"Salopette Promod","description":"Salopette Promod","prix":"10","marque":"Promod","taille":"M / 38 / 10","etat":"Good","couleur":"Blue","categorie":"Women > Clothing > Jumpsuits & playsuits","nb_photos":3,"url":"https://www.vinted.fr/items/5706980548"},{"id":"5706963835","titre":"Jupe portefeuille Sinequanone","description":"Jupe portefeuille Sinequanone","prix":"10","marque":"Sinequanone","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Skirts","nb_photos":3,"url":"https://www.vinted.fr/items/5706963835"},{"id":"5706949415","titre":"Jupe Motivi","description":"Jupe Motivi","prix":"8","marque":"Motivi","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Skirts","nb_photos":3,"url":"https://www.vinted.fr/items/5706949415"},{"id":"5706930444","titre":"Pantalon Mexx","description":"Pantalon Mexx","prix":"10","marque":"Mexx","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Trousers","nb_photos":3,"url":"https://www.vinted.fr/items/5706930444"},{"id":"5706909003","titre":"Top Sinequanone","description":"Top Sinequanone","prix":"8","marque":"Sinequanone","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Tops & T-shirts","nb_photos":3,"url":"https://www.vinted.fr/items/5706909003"},{"id":"5706889453","titre":"Veste en velours","description":"Veste en velours","prix":"15","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Brown","categorie":"Women > Clothing > Coats & Jackets > Jackets","nb_photos":3,"url":"https://www.vinted.fr/items/5706889453"},{"id":"5706861206","titre":"Chemisier Caroll","description":"Chemisier Caroll","prix":"8","marque":"Caroll","taille":"M / 38 / 10","etat":"Good","couleur":"White","categorie":"Women > Clothing > Tops & T-shirts > Blouses & tunics","nb_photos":3,"url":"https://www.vinted.fr/items/5706861206"},{"id":"5706804452","titre":"Chemisier Mango","description":"Chemisier Mango","prix":"8","marque":"Mango","taille":"M / 38 / 10","etat":"Good","couleur":"Blue","categorie":"Women > Clothing > Tops & T-shirts > Blouses & tunics","nb_photos":3,"url":"https://www.vinted.fr/items/5706804452"},{"id":"5706792308","titre":"Chemisier Promod","description":"Chemisier Promod","prix":"8","marque":"Promod","taille":"M / 38 / 10","etat":"Good","couleur":"White","categorie":"Women > Clothing > Tops & T-shirts > Blouses & tunics","nb_photos":3,"url":"https://www.vinted.fr/items/5706792308"},{"id":"5706779752","titre":"Gilet sans manche","description":"Gilet sans manche","prix":"8","marque":"Other","taille":"M / 38 / 10","etat":"Good","couleur":"Black","categorie":"Women > Clothing > Tops & T-shirts","nb_photos":3,"url":"https://www.vinted.fr/items/5706779752"},{"id":"5706764233","titre":"Blouse Promod","description":"Blouse Promod","prix":"8","marque":"Promod","taille":"M / 38 / 10","etat":"Good","couleur":"Blue","categorie":"Women > Clothing > Tops & T-shirts > Blouses & tunics","nb_photos":3,"url":"https://www.vinted.fr/items/5706764233"},{"id":"5706698615","titre":"Foulard en soie","description":"Foulard en soie multicolore","prix":"15","marque":"Other","taille":"One Size","etat":"Good","couleur":"Multicolour","categorie":"Women > Accessories > Scarves","nb_photos":2,"url":"https://www.vinted.fr/items/5706698615"},{"id":"3255855838","titre":"Appareil photo argentique Yashica","description":"Appareil photo argentique Yashica Electro 35 GL en état de fonctionnement, objectif 40mm f/1.7","prix":"80","marque":"Yashica","taille":"One Size","etat":"Very good","couleur":"Black","categorie":"Electronics > Cameras & photography > Film cameras","nb_photos":4,"url":"https://www.vinted.fr/items/3255855838"},{"id":"1651817538","titre":"Tapis kilim","description":"Tapis kilim multicolore 122x65cm fait main, motifs géométriques","prix":"40","marque":"Other","taille":"One Size","etat":"Good","couleur":"Multicolour","categorie":"Home > Decor & interior design > Rugs & carpets","nb_photos":3,"url":"https://www.vinted.fr/items/1651817538"},{"id":"171460333","titre":"Stylos plume de collection","description":"Lot de 2 stylos plume de collection : un stylo Waterman et un stylo Sheaffer","prix":"30","marque":"Other","taille":"One Size","etat":"Good","couleur":"Black","categorie":"Accessories > Stationery","nb_photos":3,"url":"https://www.vinted.fr/items/171460333"}];
+
+// ============================================================
+// STATE
+// ============================================================
+let db = [];
+let settings = { userId: '13818801', lastSync: null, batchSize: 20, delay: 30, pause: 120 };
+let currentFilter = 'all';
+
+// ============================================================
+// STORAGE
+// ============================================================
+function loadDB() {
+  try {
+    const saved = localStorage.getItem('vinted_db_v2');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // If stored DB has fewer items than INITIAL_DB, it's stale — merge missing items
+      const storedIds = new Set(parsed.map(i => i.id));
+      const missing = INITIAL_DB.filter(i => !storedIds.has(i.id));
+      if (missing.length > 0) {
+        const newItems = missing.map(d => ({
+          ...d, selected: false, vendu: false, vendu_le: null,
+          isNew: false
+        }));
+        db = [...parsed, ...newItems];
+        console.log(`[VintedManager] Added ${missing.length} missing items from INITIAL_DB`);
+      } else {
+        db = parsed;
+      }
+    } else {
+      // First load — clear any old v1 data
+      localStorage.removeItem('vinted_db');
+      db = INITIAL_DB.map(d => ({
+        ...d, selected: false, vendu: false, vendu_le: null,
+        isNew: false
+      }));
+      saveDB();
+    }
+  } catch(e) {
+    db = INITIAL_DB.map(d => ({...d, selected: false, vendu: false, vendu_le: null, isNew: false}));
+  }
+  // Dedup by id
+  const seen = new Set();
+  db = db.filter(i => { if (seen.has(i.id)) return false; seen.add(i.id); return true; });
+  // Always save after loading to persist any merges
+  saveDB();
+}
+
+function saveDB() {
+  localStorage.setItem('vinted_db_v2', JSON.stringify(db));
+}
+
+function loadSettings() {
+  try {
+    const s = localStorage.getItem('vinted_settings_v2');
+    if (s) settings = { ...settings, ...JSON.parse(s) };
+  } catch(e) {}
+  if (settings.userId) document.getElementById('user-id-input').value = settings.userId;
+  if (settings.batchSize) document.getElementById('batch-size-input').value = settings.batchSize;
+  if (settings.delay) document.getElementById('delay-input').value = settings.delay;
+  if (settings.pause !== undefined) document.getElementById('pause-input').value = settings.pause;
+  if (settings.lastSync) document.getElementById('last-sync-label').textContent = 'Sync: ' + new Date(settings.lastSync).toLocaleDateString('fr-FR');
+}
+
+function saveSettings() {
+  settings.userId = document.getElementById('user-id-input').value.trim();
+  settings.batchSize = parseInt(document.getElementById('batch-size-input')?.value || 20);
+  settings.delay = parseInt(document.getElementById('delay-input')?.value || 30);
+  settings.pause = parseInt(document.getElementById('pause-input')?.value || 120);
+  localStorage.setItem('vinted_settings_v2', JSON.stringify(settings));
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${name}'`)) n.classList.add('active');
+  });
+  if (name === 'republish') updateRepublishPage();
+}
+
+// ============================================================
+// STATS & TABLE
+// ============================================================
+function updateStats() {
+  const actifs = db.filter(i => !i.vendu);
+  const sel = actifs.filter(i => i.selected);
+  const vendus = db.filter(i => i.vendu).length;
+  
+  document.getElementById('s-total').textContent = actifs.length;
+  document.getElementById('s-sel').textContent = sel.length;
+  
+  document.getElementById('s-val').textContent = sel.reduce((a, i) => a + (parseFloat(i.prix) || 0), 0).toFixed(0) + ' €';
+  document.getElementById('total-count').textContent = actifs.length + (vendus ? ` (${vendus} vendus)` : '');
+  document.getElementById('nav-count').textContent = actifs.length;
+}
+
+function renderTable() {
+  const q = (document.getElementById('q').value || '').toLowerCase();
+  const fc = document.getElementById('f-cat').value;
+  const fe = document.getElementById('f-etat').value;
+  const fv = document.getElementById('f-vendu')?.value || 'actif';
+
+  let filtered = db.filter(i => {
+    const matchVendu = fv === 'all' ? true : fv === 'vendu' ? i.vendu : !i.vendu;
+    const matchQ = !q || i.titre.toLowerCase().includes(q) || (i.marque||'').toLowerCase().includes(q) || (i.description||'').toLowerCase().includes(q);
+    const matchCat = !fc || i.categorie.startsWith(fc);
+    const matchEtat = !fe || i.etat === fe;
+    return matchVendu && matchQ && matchCat && matchEtat;
+  });
+
+  const tbody = document.getElementById('listings-body');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><span class="empty-icon">◎</span><div class="empty-title">Aucun résultat</div></div></td></tr>`;
+    updateStats(); return;
+  }
+
+  tbody.innerHTML = filtered.map(item => {
+    const gi = db.indexOf(item);
+    const catShort = item.categorie ? item.categorie.split(' > ').slice(-2).join(' > ') : '—';
+
+    // Status badge
+    let statusBadge = '';
+    if (item.vendu) statusBadge = `<span class="badge" style="background:rgba(255,95,95,0.1);color:var(--err);border:1px solid rgba(255,95,95,0.2)">✓ Vendu</span>`;
+    else if (item.isNew) statusBadge = `<span class="badge b-new">Nouveau</span>`;
+
+    // AI badge
+
+    // Photo
+    const thumb = item.photos_urls && item.photos_urls.length
+      ? `<img src="${item.photos_urls[0]}" class="thumb" onerror="this.outerHTML='<span class=thumb-placeholder>🖼</span>'">`
+      : `<span class="thumb-placeholder">🖼</span>`;
+
+    // Row style for sold items
+    const rowStyle = item.vendu ? 'opacity:0.45;' : '';
+
+    return `<tr style="${rowStyle}">
+<td><input type="checkbox" class="chk" ${item.selected && !item.vendu ? 'checked' : ''} ${item.vendu ? 'disabled' : ''} onchange="db[${gi}].selected=this.checked;updateStats();saveDB()"></td>
+<td>${thumb}</td>
+<td style="max-width:160px">
+  <a href="${item.url}" target="_blank" style="color:var(--text);text-decoration:none;font-size:13px;font-weight:500">${item.titre}</a>
+  <div style="margin-top:3px">${statusBadge}</div>
+</td>
+<td><span class="cat-pill" title="${item.categorie}">${catShort}</span></td>
+<td style="font-size:12px;color:var(--text2)">${item.marque||'—'}</td>
+<td style="font-size:12px;color:var(--text3);white-space:nowrap">${item.taille||'—'}</td>
+<td style="font-weight:600;white-space:nowrap;color:${item.vendu?'var(--text3)':'var(--accent)'}">${item.prix ? item.prix + ' €' : '—'}</td>
+<td><span class="badge ${item.etat==='Very good'||item.etat?.includes('New') ? 'b-ok' : 'b-warn'}">${item.etat||'—'}</span></td>
+<td>
+  <button class="btn btn-icon btn-ghost btn-sm" onclick="openDetail('${item.id}')" title="Détail">◈</button>
+  ${item.vendu ? `<button class="btn btn-sm btn-ghost" onclick="unmarkSold('${item.id}')" title="Remettre en vente" style="font-size:11px;padding:3px 7px;color:var(--text3)">↺</button>` : ''}
+</td>
+</tr>`;
+  }).join('');
+  updateStats();
+}
+
+// Add sold filter to toolbar (called once on init)
+function addSoldFilter() {
+  const toolbar = document.querySelector('#page-listings .toolbar');
+  if (!toolbar || document.getElementById('f-vendu')) return;
+  const sel = document.createElement('select');
+  sel.id = 'f-vendu';
+  sel.onchange = renderTable;
+  sel.innerHTML = `<option value="actif">En vente</option><option value="vendu">Vendus</option><option value="all">Tous</option>`;
+  toolbar.insertBefore(sel, toolbar.children[3]); // after état filter
+}
+
+function selAll() {
+  const q = (document.getElementById('q').value || '').toLowerCase();
+  const fc = document.getElementById('f-cat').value;
+  const fe = document.getElementById('f-etat').value;
+  db.forEach(i => {
+    if (i.vendu) return; // NEVER select sold items
+    if ((!q || i.titre.toLowerCase().includes(q) || (i.marque||'').toLowerCase().includes(q)) && (!fc || i.categorie.startsWith(fc)) && (!fe || i.etat === fe))
+      i.selected = true;
+  });
+  document.getElementById('chk-all').checked = true;
+  saveDB(); renderTable();
+}
+function selNone() { db.forEach(i => i.selected = false); document.getElementById('chk-all').checked = false; saveDB(); renderTable(); }
+function toggleAll(el) { db.forEach(i => { if (!i.vendu) i.selected = el.checked; }); saveDB(); renderTable(); }
+
+function unmarkSold(id) {
+  const item = db.find(i => i.id === id);
+  if (item && confirm(`Remettre "${item.titre}" en vente dans la base ?`)) {
+    item.vendu = false; item.vendu_le = null;
+    saveDB(); renderTable();
+  }
+}
+
+// ============================================================
+// DETAIL PANEL
+// ============================================================
+function openDetail(id) {
+  const item = db.find(i => i.id === id);
+  if (!item) return;
+
+  const vendBanner = item.vendu
+    ? `<div class="alert" style="background:rgba(255,95,95,0.08);border:1px solid rgba(255,95,95,0.2);color:var(--err);margin-bottom:16px">
+        <span>✓</span> <strong>Article vendu</strong> le ${item.vendu_le ? new Date(item.vendu_le).toLocaleDateString('fr-FR') : '—'} — ne sera jamais republié automatiquement.
+        <button class="btn btn-sm" onclick="unmarkSold('${id}');closeDetail()" style="margin-left:auto;border-color:var(--err);color:var(--err)">Annuler</button>
+      </div>` : '';
+
+    const photos = item.photos_urls && item.photos_urls.length
+    ? item.photos_urls.map(u => `<img src="${u}" class="detail-photo" onerror="this.outerHTML='<div class=detail-photo-placeholder>🖼</div>'">`).join('')
+    : Array(item.nb_photos || 1).fill(`<div class="detail-photo-placeholder">🖼</div>`).join('');
+
+  const folder = settings.photosFolder || 'ton dossier photos';
+  const photoInfo = `<div style="font-size:11px;color:var(--text3);margin-top:6px;font-family:var(--mono)">
+    Photos attendues : <span style="color:var(--accent)">${folder}\\${item.id}_1.jpg</span>, ${folder}\\${item.id}_2.jpg…
+  </div>`;
+
+  document.getElementById('detail-content').innerHTML = `
+${vendBanner}
+<div class="detail-title">${item.titre}</div>
+<div class="detail-url"><a href="${item.url}" target="_blank">${item.url}</a></div>
+<div class="detail-photos">${photos}</div>
+${photoInfo}
+<div class="detail-grid" style="margin-top:16px">
+  <div class="detail-field"><label>Catégorie</label><div class="val" style="font-size:12px">${item.categorie||'—'}</div></div>
+  <div class="detail-field"><label>Marque</label><div class="val">${item.marque||'—'}</div></div>
+  <div class="detail-field"><label>Taille</label><div class="val">${item.taille||'—'}</div></div>
+  <div class="detail-field"><label>État</label><div class="val">${item.etat||'—'}</div></div>
+  <div class="detail-field"><label>Couleur</label><div class="val">${item.couleur||'—'}</div></div>
+  <div class="detail-field"><label>Prix</label><div class="val" style="color:var(--accent);font-weight:700">${item.prix ? item.prix + ' €' : '—'}</div></div>
+</div>
+<div class="detail-field" style="margin-bottom:16px">
+  <label>Description</label>
+  <div class="val" style="line-height:1.6;white-space:pre-wrap">${item.description||'(vide)'}</div>
+</div>
+`;
+
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function closeDetail(e) {
+  if (!e || e.target === document.getElementById('detail-overlay'))
+    document.getElementById('detail-overlay').classList.remove('open');
+}
+
+// ============================================================
+// AI OPTIMIZATION
+// ============================================================
+"
+- Description : "${item.description || '(vide)'}"
+- Marque : ${item.marque} | Catégorie : ${item.categorie}
+- État : ${item.etat} | Taille : ${item.taille} | Couleur : ${item.couleur} | Prix : ${item.prix}€
+
+Règles :
+1. Titre : accrocheur, mots-clés Vinted (matière, couleur, style, marque), max 60 caractères
+2. Description : état précis, détails utiles, dimensions si pertinent
+3. Style identique à l'original (factuel = factuel, détaillé = détaillé)
+4. N'invente aucune information
+5. Réponds UNIQUEMENT en JSON : {"titre":"...","description":"..."}`;
+
+// ============================================================
+// REPUBLISH — Never includes sold items
+// ============================================================
+function updateRepublishPage() {
+  const sel = db.filter(i => i.selected && !i.vendu);
+  document.getElementById('sel-count').textContent = sel.length;
+}
+
+function estParcel(item) {
+  const c = (item.categorie || '').toLowerCase();
+  if (c.includes('coat') || c.includes('jacket') || c.includes('rug') || c.includes('camera')) return 'Large';
+  return 'Small';
+}
+
+function addLog(msg, type = 'info') {
+  const box = document.getElementById('log-box');
+  const d = document.createElement('div');
+  d.className = 'log-line log-' + type;
+  const t = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  d.textContent = `[${t}] ${msg}`;
+  box.appendChild(d); box.scrollTop = box.scrollHeight;
+}
+
+function launchRepublish() {
+  // CRITICAL: NEVER republish sold items
+  const allSel = db.filter(i => i.selected && !i.vendu);
+  if (!allSel.length) { alert('Aucune annonce sélectionnée (les articles vendus sont exclus automatiquement).'); return; }
+
+  const batchSize = settings.batchSize || 20;
+  const delaySeconds = settings.delay || 30;
+  const pauseSeconds = settings.pause || 120;
+
+  // Warn if too many selected
+  if (allSel.length > batchSize) {
+    const ok = confirm(`⚠️ Tu as sélectionné ${allSel.length} annonces mais le maximum recommandé est ${batchSize} par session.\n\nPour éviter un blocage Vinted, seules les ${batchSize} premières seront incluses dans ce script.\n\nContinuer ?`);
+    if (!ok) return;
+  }
+
+  const sel = allSel.slice(0, batchSize);
+
+  document.getElementById('republish-progress').style.display = 'block';
+  document.getElementById('log-box').innerHTML = '';
+  addLog(`Session : ${sel.length} annonce(s) | Délai : ${delaySeconds}s entre chaque | Pause : ${pauseSeconds > 0 ? pauseSeconds+'s toutes les 10' : 'désactivée'}`, 'step');
+
+  const instructions = sel.map((item, idx) => {
+    const titre = item.titre;
+    const desc = item.description;
+    const catParts = item.categorie.split(' > ');
+    const parcel = estParcel(item);
+
+    // Pause marker every 10 items
+    const pauseMarker = (idx > 0 && idx % 10 === 0 && pauseSeconds > 0)
+      ? `⏸ PAUSE ${pauseSeconds}s avant de continuer (anti-détection Vinted)\n\n` : '';
+
+    return `${pauseMarker}### ${idx+1}/${sel.length} — ${titre}
+URL de l'annonce : ${item.url}
+
+ÉTAPE 1 — Sauvegarder les photos AVANT suppression :
+→ Va sur l'URL ci-dessus
+→ Récupère toutes les photos de la page (clique clic-droit → "Enregistrer" sur chaque, OU utilise l'outil de téléchargement)
+→ Garde-les en mémoire pour l'étape 3
+
+ÉTAPE 2 — Supprimer l'annonce :
+→ Menu ⋯ → "Supprimer l'annonce" → Confirmer
+→ Attendre ${delaySeconds} secondes avant l'étape suivante
+
+ÉTAPE 3 — Créer la nouvelle annonce :
+→ https://www.vinted.fr/items/new
+→ Upload les photos récupérées à l'étape 1
+→ Catégorie : ${catParts.join(' → ')}
+→ Titre : ${titre}
+→ Description : ${desc || '(laisser vide)'}
+→ Marque : ${item.marque}
+→ Taille : ${item.taille}
+→ État : ${item.etat}
+→ Couleur : ${item.couleur || '(ignorer)'}
+→ Prix : ${item.prix} €
+→ Colis : ${parcel}
+→ Publier → confirmer`;
+  }).join('\n\n---\n\n');
+
+  const totalTime = sel.length * delaySeconds + Math.floor(sel.length / 10) * pauseSeconds;
+  const totalMin = Math.ceil(totalTime / 60);
+
+  const prompt = `# Republication Vinted — ${sel.length} annonce(s)
+Durée estimée : ~${totalMin} minutes (délais anti-blocage inclus)
+
+## RÈGLES IMPORTANTES :
+- Attendre EXACTEMENT ${delaySeconds} secondes entre chaque annonce
+- Si tu vois "rate limited" ou captcha → STOP et préviens-moi
+- Si une annonce est marquée "Vendu" → NE PAS la recréer, passer à la suivante
+- Les photos : va sur l'URL AVANT de supprimer, copie/télécharge toutes les images de l'annonce, puis reposte-les
+
+## ANNONCES :
+
+${instructions}
+
+---
+FIN — Confirme le nombre d'annonces publiées avec succès.`;
+
+  navigator.clipboard.writeText(prompt).catch(() => {});
+  addLog(`Script copié ! ${sel.length} annonces · ~${totalMin} min · Colle dans Claude.ai avec extension Chrome`, 'ok');
+  if (allSel.length > batchSize) {
+    addLog(`⚠️ ${allSel.length - batchSize} annonces restantes à faire en prochaine session`, 'info');
+  }
+}
+
+// ============================================================
+// SYNC — Handles sold items + new items
+// ============================================================
+function triggerSync() {
+  const uid = settings.userId || '13818801';
+  const script = `Va sur https://www.vinted.fr/member/${uid}/items.
+1. Utilise l'API /api/v2/wardrobe/${uid}/items pour récupérer TOUTES les annonces (actives ET vendues).
+2. Pour chaque annonce récupère : id, title, price, brand, size, condition, color, catalog_branch (catégorie complète), description, nb photos, url, et le statut (active ou sold).
+3. Retourne le JSON suivant :
+{
+  "items": [...],
+  "sold_ids": ["id1", "id2", ...]  // IDs des articles vendus depuis la dernière synchro
+}`;
+  navigator.clipboard.writeText(script).catch(() => {});
+  document.getElementById('last-sync-label').textContent = 'Script copié → colle dans Claude';
+}
+
+/**
+ * Called by the user after pasting Claude's sync response.
+ * Accepts either raw JSON array or {items, sold_ids} object.
+ * - Marks sold items as sold (never deleted, kept in history)
+ */
+function mergeSync(payload) {
+  let newItems = [];
+  let soldIds = [];
+
+  if (Array.isArray(payload)) {
+    newItems = payload;
+  } else if (payload && payload.items) {
+    newItems = payload.items;
+    soldIds = payload.sold_ids || [];
+  } else {
+    alert('Format invalide. Attends un JSON avec {items:[...], sold_ids:[...]}');
+    return;
+  }
+
+  const existingIds = new Set(db.map(i => i.id));
+  let addedCount = 0;
+  let soldCount = 0;
+
+  // 1. Mark sold items
+  soldIds.forEach(sid => {
+    const item = db.find(i => i.id === String(sid));
+    if (item && !item.vendu) {
+      item.vendu = true;
+      item.vendu_le = new Date().toISOString();
+      item.selected = false; // deselect sold items
+      soldCount++;
+    }
+  });
+
+  // Also mark sold from items list if status indicates sold
+  newItems.forEach(ni => {
+    if (ni.vendu || ni.status === 'sold' || ni.status === 'inactive') {
+      const item = db.find(i => i.id === String(ni.id));
+      if (item && !item.vendu) {
+        item.vendu = true;
+        item.vendu_le = new Date().toISOString();
+        item.selected = false;
+        soldCount++;
+      }
+    }
+  });
+
+  // 2. Add new items (not already in DB, not sold)
+  newItems.filter(ni => !ni.vendu && ni.status !== 'sold').forEach(ni => {
+    const id = String(ni.id || ni.item_id);
+    if (!existingIds.has(id)) {
+      db.push({
+        id,
+        titre: ni.titre || ni.title || '',
+        description: ni.description || '',
+        prix: String(ni.prix || ni.price || ''),
+        marque: ni.marque || ni.brand || '',
+        taille: ni.taille || ni.size || '',
+        etat: ni.etat || ni.condition || '',
+        couleur: ni.couleur || ni.color || '',
+        categorie: ni.categorie || ni.category || '',
+        nb_photos: ni.nb_photos || 0,
+        photos_urls: ni.photos_urls || [],
+        url: ni.url || `https://www.vinted.fr/items/${id}`,
+        selected: false,
+        vendu: false,
+        vendu_le: null,
+        isNew: true
+      });
+      existingIds.add(id);
+      addedCount++;
+    }
+  });
+
+  settings.lastSync = new Date().toISOString();
+  saveDB(); saveSettings();
+  document.getElementById('last-sync-label').textContent = 'Sync: ' + new Date().toLocaleDateString('fr-FR');
+  renderTable();
+
+  // Auto-optimize new items if API key present
+  if (addedCount && settings.apiKey) {
+  } else {
+  }
+
+  const msg = [];
+  if (addedCount) msg.push(`${addedCount} nouveau(x) article(s) ajouté(s)`);
+  if (soldCount) msg.push(`${soldCount} article(s) marqué(s) comme vendu(s) — exclus de la republication`);
+  if (!msg.length) msg.push('Base déjà à jour');
+  alert('Synchronisation terminée :\n' + msg.join('\n'));
+}
+window.mergeSync = mergeSync;
+
+// ============================================================
+// SETTINGS
+// ============================================================
+
+function exportData() {
+  const blob = new Blob([JSON.stringify({ db, settings: { ...settings, apiKey: '***' } }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'vinted_manager_backup.json'; a.click();
+}
+function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      db = Array.isArray(parsed) ? parsed : (parsed.db || []);
+      saveDB(); renderTable();
+      alert(`Base importée : ${db.length} articles (${db.filter(i=>i.vendu).length} vendus)`);
+    } catch(err) { alert('Erreur format JSON'); }
+  };
+  reader.readAsText(file);
+}
+function forceRefreshDB() {
+  // Merge INITIAL_DB into current DB, adding any missing items
+  const storedIds = new Set(db.map(i => i.id));
+  const missing = INITIAL_DB.filter(i => !storedIds.has(i.id));
+  if (missing.length === 0) {
+    alert(`La base est déjà à jour (${db.length} annonces).`);
+    return;
+  }
+  missing.forEach(d => db.push({
+    ...d, selected: false, vendu: false, vendu_le: null,
+    isNew: false
+  }));
+  // Dedup
+  const seen = new Set(); db = db.filter(i => { if(seen.has(i.id)) return false; seen.add(i.id); return true; });
+  saveDB(); renderTable(); updateStats();
+  alert(`✓ ${missing.length} annonce(s) ajoutée(s). Total : ${db.length} annonces.`);
+}
+
+function resetData() {
+  if (confirm('Supprimer toutes les données locales ? Irréversible.')) {
+    localStorage.removeItem('vinted_db_v2');
+    localStorage.removeItem('vinted_db');
+    loadDB(); renderTable();
+    alert('Base réinitialisée avec les 91 annonces.');
+  }
+}
+function hideNotice() { document.getElementById('api-notice').style.display = 'none'; }
+
+// ============================================================
+// INIT
+// ============================================================
+loadDB();
+loadSettings();
+addSoldFilter();
+renderTable();
+updateStats();
+
+</script>
+</body>
+</html>
